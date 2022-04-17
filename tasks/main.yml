@@ -7,9 +7,9 @@
 # Install Required Packages
 
 - name: Install Required System Packages
-  apt: 
-    update_cache: yes
-    name: 
+  ansible.builtin.apt:
+    update_cache: true
+    name:
       - apt-transport-https
       - ca-certificates
       - curl
@@ -19,43 +19,50 @@
       - python3-dev
       - python3-setuptools
       - virtualenv
-      - libpq-dev 
+      - libpq-dev
       - libssl-dev
       - libffi-dev
-  become: yes
+  become: true
 
 - name: Add Podman GPG Keys & Repo
-  shell: . /etc/os-release && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list && curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key | sudo apt-key add -
-  become: yes
-  
+  ansible.builtin.shell: >
+    set -o pipefail &&
+    . /etc/os-release &&
+    echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" |
+    sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list &&
+    curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key |
+    sudo apt-key add -
+  register: podman_gpg
+  changed_when: podman_gpg.rc != 0
+  become: true
+
 - name: Update Apt and Install Podman
-  apt:
-    update_cache: yes
+  ansible.builtin.apt:
+    update_cache: true
     name: podman
-    state: latest
-  become: yes
+  become: true
 
 - name: Install PostgreSQL Python Module
-  pip:
-    name: 
+  ansible.builtin.pip:
+    name:
       - psycopg2
-  become: yes
+  become: true
 
 # -------------------------------------
 # Create Required Users
 
 - name: Create 'synapse' Group
-  group:
+  ansible.builtin.group:
     name: "{{ synapse_name }}"
     gid: 991
-  become: yes
+  become: true
 
 - name: Create 'synapse' User
-  user:
+  ansible.builtin.user:
     name: "{{ synapse_name }}"
     group: "{{ synapse_name }}"
     uid: 991
-  become: yes
+  become: true
 
 - name: Create Synapse Pod
   containers.podman.podman_pod:
@@ -65,9 +72,9 @@
       - "8080:80"
       - "4343:443"
       - "8090:8090"
-      - "127.0.0.1:5432:5432"   
+      - "127.0.0.1:5432:5432"
       - "127.0.0.1:8008:8008"
-  
+
 # -------------------------------------
 # Pull Required Images
 
@@ -112,13 +119,12 @@
   register: postgres_container_trigger
 
 - name: Wait Until PostgreSQL Starts Up
-  wait_for: 
+  ansible.builtin.wait_for:
     port: 5432
     delay: 5
-  when: postgres_container_trigger.changed
 
 - name: Create '{{ postgres_user }}' User
-  postgresql_user: >
+  ansible.builtin.postgresql_user: >
     name={{ postgres_user }}
     password={{ postgres_password }}
     role_attr_flags=CREATEDB,SUPERUSER,LOGIN
@@ -126,7 +132,7 @@
     port=5432
 
 - name: Create '{{ synapse_db_name }}' Database
-  postgresql_db: >
+  ansible.builtin.postgresql_db: >
     name={{ synapse_db_name }}
     owner={{ postgres_user }}
     login_host=127.0.0.1
@@ -141,7 +147,7 @@
 # Start Synapse Services & Container
 
 - name: Ensure Synapse Configuration Paths Exist
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: 0777
@@ -156,19 +162,25 @@
     - "/home/synapse/data/{{ synapse_name }}/media"
     - "/home/synapse/data/{{ synapse_name }}/logs"
   become: true
-  
+
 - name: Register Synapse Signing Keys
-  stat:
+  ansible.builtin.stat:
     path: /home/synapse/data/{{ synapse_name }}/{{ synapse_server_name }}.signing.key
   register: signing_key_trigger
 
 - name: Generate Synapse Signing Keys
-  command: "podman run --rm --mount type=bind,src=/home/synapse/data/{{ synapse_name }},dst=/data -e SYNAPSE_SERVER_NAME={{ synapse_server_name }} -e SYNAPSE_REPORT_STATS=no {{ synapse_podman_image }} generate"
+  ansible.builtin.command: "
+    podman run
+    --rm
+    --mount type=bind,src=/home/synapse/data/{{ synapse_name }},dst=/data
+    -e SYNAPSE_SERVER_NAME={{ synapse_server_name }}
+    -e SYNAPSE_REPORT_STATS=no
+    {{ synapse_podman_image }} generate"
   when: not signing_key_trigger.stat.exists
   become: true
 
 - name: Ensure Synapse Signing Key Permissions
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     mode: 0777
     owner: "{{ synapse_name }}"
@@ -179,34 +191,36 @@
   become: true
 
 - name: Copy Synapse Configuration File
-  template:
+  ansible.builtin.template:
     src: synapse.yaml
+    mode: 0777
     dest: "/home/synapse/data/{{ synapse_name }}/homeserver.yaml"
   register: synapse_config_trigger
 
 - name: Create Synapse Container
   containers.podman.podman_container:
-      name: "{{ synapse_container_name }}"
-      image: "{{ synapse_podman_image }}"
-      state: started
-      restart: "{{ synapse_config_trigger.changed }}"
-      pod: synapse_pod
-      env:
-        SYNAPSE_CONFIG_DIR: "/data"
-      volumes:
-        - "/home/synapse/data/{{ synapse_name }}:/data"
+    name: "{{ synapse_container_name }}"
+    image: "{{ synapse_podman_image }}"
+    state: started
+    restart: "{{ synapse_config_trigger.changed }}"
+    pod: synapse_pod
+    env:
+      SYNAPSE_CONFIG_DIR: "/data"
+    volumes:
+      - "/home/synapse/data/{{ synapse_name }}:/data"
 
 # -------------------------------------
 # Start Identity Server Container
 
 - name: Copy MA1SD Configuration File
-  template:
+  ansible.builtin.template:
     src: ma1sd.yaml
+    mode: 0777
     dest: "/home/synapse/data/{{ ma1sd_name }}/ma1sd.yaml"
   register: ma1sd_config_trigger
 
 - name: Create MA1SD Container
-  containers.podman.podman_container:   
+  containers.podman.podman_container:
     name: "{{ ma1sd_container_name }}"
     image: "{{ ma1sd_podman_image }}"
     state: started
@@ -219,7 +233,7 @@
 # Start HTTPS-Portal Container
 
 - name: Create HTTPS-Portal Container
-  containers.podman.podman_container:    
+  containers.podman.podman_container:
     name: "{{ https_portal_container_name }}"
     image: "{{ https_portal_podman_image }}"
     state: started
@@ -248,7 +262,7 @@
 # Add Port Forwarding
 
 - name: Add Host Port Forwarding
-  iptables:
+  ansible.builtin.iptables:
     table: nat
     chain: PREROUTING
     in_interface: eth0
@@ -258,7 +272,7 @@
     jump: REDIRECT
     to_ports: "{{ item.redirection }}"
   with_items:
-    - { destination: 80, redirection: 8080 }
-    - { destination: 443, redirection: 4343 }
-    - { destination: 8448, redirection: 8080 }
-  become: yes
+    - {destination: 80, redirection: 8080}
+    - {destination: 443, redirection: 4343}
+    - {destination: 8448, redirection: 8080}
+  become: true

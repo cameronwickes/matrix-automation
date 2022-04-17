@@ -1,16 +1,17 @@
 galaxy_info:
+  role_name: matrix_automation
   author: Cameron Wickes
-  description: Installs and configures a Matrix Synapse server with optional LDAP and SSO integration for inter-organisation communications.
+  description: An Ansible role to automate the installation and configuration of a Matrix Synapse server to create secure organisational communication channels.
   license: MIT
 
   min_ansible_version: 2.1
 
   platforms:
-  - name: Ubuntu
-    versions:
-    - all
+    - name: Ubuntu
+      versions:
+        - all
 
-  galaxy_tags: 
+  galaxy_tags:
     - matrix
     - synapse
     - ma1sd
@@ -24,5 +25,5 @@ galaxy_info:
     - voip
     - chat
     - containers
-    
+
 dependencies: []
