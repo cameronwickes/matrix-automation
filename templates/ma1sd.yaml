@@ -1,0 +1,32 @@
+# MA1SD Configuration File
+# Author: Cameron Wickes
+# Date: 02/04/22
+---
+
+matrix:
+  domain: '{{ synapse_server_name }}'
+  v1: true 
+  v2: true
+
+dns:
+  overwrite:
+    homeserver:
+      client:
+        - name: '127.0.0.1'
+          value: 'http://localhost:8008'
+        - name: '{{ synapse_server_name }}'
+          value: 'http://localhost:8008'
+
+forward:
+  servers: {{ synapse_federation_list }}
+
+key:
+  path: '/etc/ma1sd/keys'
+
+storage:
+  backend: sqlite
+  provider:
+    sqlite:
+      database: '/etc/ma1sd/ma1sd.db'
+
+{{ ma1sd_configuration }}

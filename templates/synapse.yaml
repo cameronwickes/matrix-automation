@@ -1,0 +1,41 @@
+# Synapse Configuration File
+# Author: Cameron Wickes
+# Date: 02/04/22
+---
+
+server_name: "{{ synapse_server_name }}"
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    bind_addresses: [0.0.0.0]
+
+    resources:
+      - names: [client, federation]
+        compress: false
+
+database:
+  name: psycopg2
+  txn_limit: 10000
+  args:
+    user: {{ synapse_db_username }}
+    password: {{ synapse_db_password }}
+    database: {{ synapse_db_name }}
+    host: 127.0.0.1
+    port: 5432 
+    cp_min: 5
+    cp_max: 10
+
+media_store_path: "/data/media"
+federation_domain_whitelist: {{ synapse_federation_list }}
+signing_key_path: "/data/{{ synapse_server_name }}.signing.key"
+pid_file: /data/homeserver.pid
+
+require_auth_for_profile_requests: true
+enable_registration: false
+enable_3pid_lookup: true
+report_stats: false
+
+{{ synapse_configuration }}

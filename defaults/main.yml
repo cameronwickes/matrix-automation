@@ -1,2 +1,46 @@
+# Matrix Automation Default Variables
+# Author: Cameron Wickes
+# Date: 02/04/22
 ---
-# defaults file for matrix-automation
+
+# -------------------------------------
+# Required Variables
+
+# synapse_server_name: domain.tld
+# postgres_user: db_user
+# postgres_password: db_password
+# postgres_database: my_db
+# synapse_federation_list: [domain2.tld]
+
+# -------------------------------------
+# PostgreSQL Variables
+
+postgres_name: postgres
+postgres_podman_image: "postgres:latest"
+postgres_container_name: "{{ postgres_name }}"
+container_memory_limit: null
+
+# -------------------------------------
+# Synapse Variables
+
+synapse_name: synapse
+synapse_container_name: "{{ synapse_name }}"
+synapse_podman_image: "matrixdotorg/synapse:latest"
+synapse_db_name: "{{ synapse_name }}"
+synapse_db_username: "{{ postgres_user }}"
+synapse_db_password: "{{ postgres_password }}"
+synapse_configuration: ""
+
+# -------------------------------------
+# HTTPS Portal Variables
+
+https_portal_name: https_portal
+https_portal_container_name: "{{ https_portal_name }}"
+https_portal_podman_image: "steveltn/https-portal:latest"
+
+# -------------------------------------
+# MA1SD Variables
+
+ma1sd_name: ma1sd
+ma1sd_container_name: "{{ ma1sd_name }}"
+ma1sd_podman_image: "ma1uta/ma1sd:latest"
