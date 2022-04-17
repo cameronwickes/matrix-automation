@@ -31,9 +31,66 @@
 
 ## 🪄 Dependencies
 
+Matrix-Automation uses Podman to create rootless containers. The Ansible Podman collection must therefore be installed before the role can be utilised:
+
+`ansible-galaxy collection install containers.podman`
+
 ## ⚙️ Role Variables
 
+
 ## 🗒️ Example Playbook
+
+An example playbook can be seen below:
+
+```
+# Example Matrix Automation Playbook
+# Author: Cameron Wickes
+# Date: 18/04/22
+---
+- hosts: servers
+  roles:
+    - "matrix-automation"
+  vars:
+    postgres_user: synapse
+    postgres_password: synapse
+    postgres_database: synapse
+    synapse_server_name: example.org
+    synapse_federation_list: []
+    synapse_configuration: |
+      password_providers:
+        - module: "ldap_auth_provider.LdapAuthProvider"
+          config:
+            enabled: true
+            mode: "search"
+            uri: "ldap://ldap.example.org:389"
+            start_tls: false
+            base: "ou=employees,dc=example,dc=org"
+            attributes:
+              uid: "uid"
+              mail: "email"
+              name: "givenName"
+            bind_dn: "cn=synapse,ou=services,dc=example,dc=org"
+            bind_password: "synapse"
+            filter: ""
+    ma1sd_configuration: |
+      ldap:
+        enabled: true
+        lookup: true
+        connection:
+          host: "example.org"
+          port: 389
+          bindDn: "cn=synapse,ou=services,dc=example,dc=org"
+          bindPassword: "synapse"
+          baseDNs:
+            - "ou=employees,dc=example,dc=org"
+        attribute:
+          uid:
+            type: "uid"
+            value: "uid"
+          name: "givenName"
+          email: "email"
+          msisdn: "phone"
+```
 
 ## ⚖️ License
 
