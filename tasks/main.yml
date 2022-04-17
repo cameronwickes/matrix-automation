@@ -166,7 +166,13 @@
   register: signing_key_trigger
 
 - name: Generate Synapse Signing Keys
-  ansible.builtin.command: "podman run --rm --mount type=bind,src=/home/synapse/data/{{ synapse_name }},dst=/data --pod synapse_pod -e SYNAPSE_SERVER_NAME={{ synapse_server_name }} -e SYNAPSE_REPORT_STATS=no {{ synapse_podman_image }} generate"
+  ansible.builtin.command: "
+    podman run
+    --rm
+    --mount type=bind,src=/home/synapse/data/{{ synapse_name }},dst=/data
+    -e SYNAPSE_SERVER_NAME={{ synapse_server_name }}
+    -e SYNAPSE_REPORT_STATS=no
+    {{ synapse_podman_image }} generate"
   when: not signing_key_trigger.stat.exists
   become: true
 
