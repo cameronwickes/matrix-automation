@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img alt="matrix logo" src="https://element.io/images/logo-mark-primary.svg" width="224px"/><br/>
+  <img alt="matrix logo" src="https://element.io/images/logo-mark-primary.svg" width="200px"/><br/>
   Matrix-Automation
 </h1>
 
