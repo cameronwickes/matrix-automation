@@ -16,12 +16,12 @@
 <br/>
 
 <p>
-  <b>Matrix-Automation creates and configures a functioning Synapse Homeserver through the generation of four rootless Podman containers:</b>
+  <b>Matrix-Automation creates a functioning Synapse Homeserver by configuring four rootless Podman containers:</b>
   <ul>
-    <li>A PostgreSQL Database</li>
-    <li>A Synapse Homeserver</li>
-    <li>A Ma1sd Identity Server</li>
-    <li>A Reverse Proxy</li>
+    <li>A PostgreSQL Database - Storing Synapse Data</li>
+    <li>A Synapse Homeserver - Federating Rooms</li>
+    <li>A Ma1sd Identity Server - Handling 3PID Integrations</li>
+    <li>A Reverse Proxy - Link Connections to Synapse</li>
   </ul>
   
   </br>
