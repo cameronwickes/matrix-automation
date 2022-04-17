@@ -9,7 +9,6 @@
 # synapse_server_name: domain.tld
 # postgres_user: db_user
 # postgres_password: db_password
-# postgres_database: my_db
 # synapse_federation_list: [domain2.tld]
 
 # -------------------------------------
@@ -44,3 +43,4 @@ https_portal_podman_image: "steveltn/https-portal:latest"
 ma1sd_name: ma1sd
 ma1sd_container_name: "{{ ma1sd_name }}"
 ma1sd_podman_image: "ma1uta/ma1sd:latest"
+ma1sd_configuration: ""

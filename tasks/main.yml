@@ -124,7 +124,6 @@
     role_attr_flags=CREATEDB,SUPERUSER,LOGIN
     login_host=127.0.0.1
     port=5432
-  when: postgres_user is defined and postgres_password is defined
 
 - name: Create '{{ synapse_db_name }}' Database
   postgresql_db: >
@@ -137,7 +136,6 @@
     template=template0
     lc_collate=C
     lc_ctype=C
-  when: postgres_database is defined and postgres_user is defined
 
 # -------------------------------------
 # Start Synapse Services & Container
