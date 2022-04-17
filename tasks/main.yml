@@ -26,14 +26,11 @@
 
 - name: Add Podman GPG Keys & Repo
   ansible.builtin.shell: >
-    set -o pipefail &&
     . /etc/os-release &&
     echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" |
     sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list &&
     curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key |
     sudo apt-key add -
-  register: podman_gpg
-  changed_when: podman_gpg.rc != 0
   become: true
 
 - name: Update Apt and Install Podman
