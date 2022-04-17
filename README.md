@@ -37,6 +37,12 @@ Matrix-Automation uses Podman to create rootless containers. The Ansible Podman 
 
 ## ⚙️ Role Variables
 
+The following variables are required by Matrix-Automation:
+
+- synapse_server_name:
+- postgres_user:
+- postgres_password:
+- synapse_federation_list:
 
 ## 🗒️ Example Playbook
 
