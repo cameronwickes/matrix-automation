@@ -39,10 +39,23 @@ Matrix-Automation uses Podman to create rootless containers. The Ansible Podman 
 
 The following variables are required by Matrix-Automation:
 
-- synapse_server_name:
-- postgres_user:
-- postgres_password:
-- synapse_federation_list:
+- `synapse_server_name`:
+- `postgres_user`:
+- `postgres_password`:
+- `synapse_federation_list`:
+
+These variables are necessary to configure Synapse and Ma1sd effectively:
+
+- `synapse_configuration`:
+- `ma1sd_configuration`:
+
+These variables help tweak configuration to user liking:
+
+- `postgres_container_name`:
+- `synapse_container_name`:
+- `https_portal_container_name`:
+- `ma1sd_container_name`:
+- `synapse_db_name`:
 
 ## 🗒️ Example Playbook
 
