@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  An <b>Ansible role</b> for automating the installation and configuration of a <b>Matrix Synapse</b> server to create secure organisational communication channels.
+  An <b>Ansible</b> role for automating the installation and configuration of a <b>Matrix Synapse</b> server to create secure organisational communication channels.
 </p>
 
 <br/>
@@ -29,11 +29,11 @@
   It supports LDAP and SSO integrations for login and user search, and can federate with other Synapse homeservers and identity servers out of the box. Example playbooks can be seen below.
 </p>
 
-## 🔗 Requirements / Dependencies
+## 🪄 Dependencies
 
-## 🪛 Role Variables
+## ⚙️ Role Variables
 
-## 🔧 Example Playbook
+## 🗒️ Example Playbook
 
 ## ⚖️ License
 
