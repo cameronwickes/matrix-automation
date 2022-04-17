@@ -39,23 +39,23 @@ Matrix-Automation uses Podman to create rootless containers. The Ansible Podman 
 
 The following variables are required by Matrix-Automation:
 
-- `synapse_server_name`:
-- `postgres_user`:
-- `postgres_password`:
-- `synapse_federation_list`:
+- `synapse_server_name`: The domain name of the server you wish to setup Synapse on. **DNS records should be configured to point to the homeserver.**
+- `postgres_user`: The username for PostgreSQL container access.
+- `postgres_password`: The password for PostgreSQL container access. **Should be secure.**
+- `synapse_federation_list`: The list of other owned homeservers to federate room state and identity with.
 
 These variables are necessary to configure Synapse and Ma1sd effectively:
 
-- `synapse_configuration`:
-- `ma1sd_configuration`:
+- `synapse_configuration`: Additional configuration settings to go in Synapse's *homeserver.yaml* file - LDAP and SSO should be setup here.
+- `ma1sd_configuration`: Additional configuration settings to go in Ma1sd's *ma1sd.yaml* file - LDAP should be setup here.
 
 These variables help tweak configuration to user liking:
 
-- `postgres_container_name`:
-- `synapse_container_name`:
-- `https_portal_container_name`:
-- `ma1sd_container_name`:
-- `synapse_db_name`:
+- `postgres_container_name`: The name to attach to the PostgreSQL container.
+- `synapse_container_name`: The name to attach to the Synapse container.
+- `https_portal_container_name`: The name to attach to the HTTPS Portal (Reverse Proxy) Container.
+- `ma1sd_container_name`: The name to attach to the Ma1sd container.
+- `synapse_db_name`: The name of the synapse database within the PostgreSQL container.
 
 ## 🗒️ Example Playbook
 
