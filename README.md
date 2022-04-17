@@ -1,4 +1,4 @@
-Role Name
+matrix-automation
 =========
 
 A brief description of the role goes here.
