@@ -5,8 +5,11 @@
 
 matrix:
   domain: '{{ synapse_server_name }}'
-  v1: true 
+  v1: true
   v2: true
+  identity:
+    servers:
+      forwarders: {{ synapse_federation_list | map('regex_replace', '^', 'https://') | list }}
 
 dns:
   overwrite:
@@ -14,11 +17,14 @@ dns:
       client:
         - name: '127.0.0.1'
           value: 'http://localhost:8008'
+        - name: 'localhost'
+          value: 'http://localhost:8008'
         - name: '{{ synapse_server_name }}'
           value: 'http://localhost:8008'
 
 forward:
-  servers: {{ synapse_federation_list }}
+  servers:
+    - 'forwarders'
 
 key:
   path: '/etc/ma1sd/keys'

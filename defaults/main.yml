@@ -10,6 +10,8 @@
 # postgres_user: db_user
 # postgres_password: db_password
 # synapse_federation_list: [domain2.tld]
+# ma1sd_extender_username: ma1sd_user
+# ma1sd_extender_password: ma1sd_password
 
 # -------------------------------------
 # PostgreSQL Variables
@@ -44,3 +46,10 @@ ma1sd_name: ma1sd
 ma1sd_container_name: "{{ ma1sd_name }}"
 ma1sd_podman_image: "ma1uta/ma1sd:latest"
 ma1sd_configuration: ""
+
+# -------------------------------------
+# MA1SD-Extender Variables
+
+ma1sd_extender_name: ma1sd_extender
+ma1sd_extender_container_name: "{{ ma1sd_extender_name }}"
+ma1sd_extender_podman_image: "cameronwickes/ma1sd-extender:latest"

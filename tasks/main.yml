@@ -22,10 +22,13 @@
       - libpq-dev
       - libssl-dev
       - libffi-dev
+      - firewalld
+      - matrix-synapse
   become: true
 
 - name: Add Podman GPG Keys & Repo
-  ansible.builtin.shell: ". /etc/os-release && echo "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list && curl -L "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key" | sudo apt-key add -"
+  ansible.builtin.shell: ". /etc/os-release && echo \"deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /\" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list && curl -L \"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key\" | sudo apt-key add -"
+  when: ansible_facts['lsb']['release'] != "21.10"
   become: true
 
 - name: Update Apt and Install Podman
@@ -66,6 +69,7 @@
       - "8090:8090"
       - "127.0.0.1:5432:5432"
       - "127.0.0.1:8008:8008"
+      - "127.0.0.1:8060:8060"
 
 # -------------------------------------
 # Pull Required Images
@@ -73,18 +77,27 @@
 - name: Pull PostgreSQL Podman Image
   containers.podman.podman_image:
     name: "{{ postgres_podman_image }}"
+    force: true
 
 - name: Pull Synapse Podman Image
   containers.podman.podman_image:
     name: "{{ synapse_podman_image }}"
+    force: true
 
 - name: Pull HTTPS Portal Image
   containers.podman.podman_image:
     name: "{{ https_portal_podman_image }}"
+    force: true
 
 - name: Pull MA1SD Image
   containers.podman.podman_image:
     name: "{{ ma1sd_podman_image }}"
+    force: true
+
+- name: Pull MA1SD Extender Image
+  containers.podman.podman_image:
+    name: "{{ ma1sd_extender_podman_image }}"
+    force: true
 
 # -------------------------------------
 # Start PostgreSQL Services & Container
@@ -116,24 +129,25 @@
     delay: 5
 
 - name: Create '{{ postgres_user }}' User
-  ansible.builtin.postgresql_user: >
-    name={{ postgres_user }}
-    password={{ postgres_password }}
-    role_attr_flags=CREATEDB,SUPERUSER,LOGIN
-    login_host=127.0.0.1
-    port=5432
+  ansible.builtin.postgresql_user:
+    name: "{{ postgres_user }}"
+    password: "{{ postgres_password }}"
+    role_attr_flags: CREATEDB,SUPERUSER,LOGIN
+    login_host: 127.0.0.1
+    port: 5432
 
 - name: Create '{{ synapse_db_name }}' Database
-  ansible.builtin.postgresql_db: >
-    name={{ synapse_db_name }}
-    owner={{ postgres_user }}
-    login_host=127.0.0.1
-    port=5432
-    target={{ postgres_schema | default(omit) }}
-    state={{ (postgres_schema is defined) | ternary("restore", omit) }}
-    template=template0
-    lc_collate=C
-    lc_ctype=C
+  ansible.builtin.postgresql_db:
+    name: "{{ synapse_db_name }}"
+    owner: "{{ postgres_user }}"
+    login_host: 127.0.0.1
+    port: 5432
+    target: "{{ postgres_schema | default(omit) }}"
+    state: "{{ (postgres_schema is defined) | ternary(\"restore\", omit) }}"
+    template: template0
+    lc_collate: C
+    lc_ctype: C
+
 
 # -------------------------------------
 # Start Synapse Services & Container
@@ -202,7 +216,7 @@
       - "/home/synapse/data/{{ synapse_name }}:/data"
 
 # -------------------------------------
-# Start Identity Server Container
+# Start Identity Server Containers
 
 - name: Copy MA1SD Configuration File
   ansible.builtin.template:
@@ -221,6 +235,39 @@
     volumes:
       - "/home/synapse/data/{{ ma1sd_name }}:/etc/ma1sd"
 
+- name: Wait Until Synapse Starts Up
+  ansible.builtin.wait_for:
+    port: 8008
+    delay: 5
+
+- name: Create MA1SD Extender Password Hash
+  ansible.builtin.shell: "hash_password -p \"{{ ma1sd_extender_password }}\""
+  register: ma1sd_password
+
+- name: Create '{{ ma1sd_extender_username }}' User
+  ansible.builtin.postgresql_query:
+    query: INSERT INTO users (name, password_hash, creation_ts, admin, is_guest, deactivated, shadow_banned) VALUES (%s, %s, %s, 0, 0, 0, FALSE) ON CONFLICT (name) DO NOTHING
+    positional_args:
+      - "@{{ ma1sd_extender_username }}:{{ synapse_server_name}}"
+      - "{{ ma1sd_password.stdout }}"
+      - "{{ ansible_date_time.epoch }}"
+    login_host: 127.0.0.1
+    port: 5432
+    db: "{{ synapse_db_name }}"
+
+- name: Create MA1SD Extender Container
+  containers.podman.podman_container:
+    name: "{{ ma1sd_extender_container_name }}"
+    image: "{{ ma1sd_extender_podman_image }}"
+    state: started
+    pod: synapse_pod
+    env:
+      PYTHONPATH: "/api/ma1sd-extender"
+      MA1SD_EXTENDER_USERNAME: "{{ ma1sd_extender_username }}"
+      MA1SD_EXTENDER_PASSWORD: "{{ ma1sd_extender_password }}"
+      MA1SD_EXTENDER_MATRIX_DOMAIN: "{{ synapse_server_name }}"
+      MA1SD_EXTENDER_FEDERATED_DOMAINS: "{{ synapse_federation_list }}"
+
 # -------------------------------------
 # Start HTTPS-Portal Container
 
@@ -232,7 +279,7 @@
     pod: synapse_pod
     env:
       DOMAINS: "{{ synapse_server_name }}"
-      STAGE: 'staging'
+      STAGE: 'production'
       CUSTOM_NGINX_SERVER_CONFIG_BLOCK: |
         location /.well-known/matrix/server {
           return 200 '{ "m.server": "{{ synapse_server_name }}:443" }';
@@ -240,6 +287,14 @@
 
         location /.well-known/matrix/client {
           return 200 '{ "m.homeserver": { "base_url": "https://{{ synapse_server_name }}" } }';
+        }
+
+        location /_matrix/identity {
+          proxy_pass http://127.0.0.1:8090/_matrix/identity;
+        }
+
+        location /_matrix/client/r0/user_directory/search {
+          proxy_pass http://127.0.0.1:8060/_matrix/client/r0/user_directory/search;
         }
 
         location /_matrix/client/r0/user_directory {
@@ -254,17 +309,14 @@
 # Add Port Forwarding
 
 - name: Add Host Port Forwarding
-  ansible.builtin.iptables:
-    table: nat
-    chain: PREROUTING
-    in_interface: eth0
-    protocol: tcp
-    match: tcp
-    destination_port: "{{ item.destination }}"
-    jump: REDIRECT
-    to_ports: "{{ item.redirection }}"
+  ansible.posix.firewalld:
+    rich_rule: "{{ item }}"
+    zone: public
+    permanent: yes
+    immediate: yes
+    state: enabled
   with_items:
-    - {destination: 80, redirection: 8080}
-    - {destination: 443, redirection: 4343}
-    - {destination: 8448, redirection: 8080}
+    - "rule family=ipv4 forward-port port=80 protocol=tcp to-port=8080"
+    - "rule family=ipv4 forward-port port=443 protocol=tcp to-port=4343"
+    - "rule family=ipv4 forward-port port=8448 protocol=tcp to-port=8080"
   become: true
