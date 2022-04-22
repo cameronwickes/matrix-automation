@@ -67,7 +67,7 @@ These variables help tweak configuration to user liking:
 
 ## 🗒️ Example Playbook
 
-### Single Server
+### Single Server LDAP Configuration
 
 An example playbook for a single server Synapse setup can be seen below:
 
@@ -123,13 +123,13 @@ An example playbook for a single server Synapse setup can be seen below:
           msisdn: "phone"
 ```
 
-### Multiple Server
+### Multiple Server LDAP Configuration
 
 An example playbook for a multi-server Synapse setup can be seen below:
 
 
 ```
-# Example Single Server Matrix Automation Playbook
+# Example Multi Server Matrix Automation Playbook
 # Author: Cameron Wickes
 # Date: 18/04/22
 ---
