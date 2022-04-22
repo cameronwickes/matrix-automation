@@ -16,7 +16,7 @@
 <br/>
 
 <p>
-  <b> <a href="https://galaxy.ansible.com/cameronwickes/matrix_automation" target="_blank">Matrix-Automation</a> creates a functioning Synapse Homeserver by configuring four rootless Podman containers:</b>
+  <b>Matrix-Automation creates a functioning Synapse Homeserver by configuring four rootless Podman containers:</b>
   <ul>
     <li>A PostgreSQL Database - Storing Synapse Data</li>
     <li>A Synapse Homeserver - Federating Rooms</li>
@@ -27,7 +27,7 @@
   
   </br>
   
-  It supports LDAP and SSO integrations for login and user search, and can federate with other Synapse homeservers and identity servers. The link to the Ansible Galaxy page is <a href="https://galaxy.ansible.com/cameronwickes/matrix_automation" target="_blank">here</a>, and example playbooks can be seen below.
+  It supports LDAP and SSO integrations for login and user search, and can federate with other Synapse homeservers and identity servers. The link to the Ansible Galaxy page is <a target="_blank" href="https://galaxy.ansible.com/cameronwickes/matrix_automation">here</a>, and example playbooks can be seen below.
 </p>
 
 ## 🪄 Dependencies
