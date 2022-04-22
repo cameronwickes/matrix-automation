@@ -11,6 +11,7 @@
 
 <p align="center">
   An <b>Ansible</b> role for automating the installation and configuration of a <b>Matrix Synapse</b> server to create secure organisational communication channels.
+  <a href="https://galaxy.ansible.com/cameronwickes/matrix_automation" target="blank">Role</a>
 </p>
 
 <br/>
