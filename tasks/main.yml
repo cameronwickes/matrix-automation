@@ -9,6 +9,7 @@
 - name: Install Required System Packages
   ansible.builtin.apt:
     update_cache: true
+    dpkg_options: 'force-overwrite'
     name:
       - apt-transport-https
       - ca-certificates

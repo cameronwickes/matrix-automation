@@ -17,7 +17,7 @@
 # PostgreSQL Variables
 
 postgres_name: postgres
-postgres_podman_image: "postgres:latest"
+postgres_podman_image: "postgres:14.2"
 postgres_container_name: "{{ postgres_name }}"
 container_memory_limit: null
 
@@ -26,7 +26,7 @@ container_memory_limit: null
 
 synapse_name: synapse
 synapse_container_name: "{{ synapse_name }}"
-synapse_podman_image: "matrixdotorg/synapse:latest"
+synapse_podman_image: "matrixdotorg/synapse:v1.57.1"
 synapse_db_name: "{{ synapse_name }}"
 synapse_db_username: "{{ postgres_user }}"
 synapse_db_password: "{{ postgres_password }}"
@@ -37,14 +37,14 @@ synapse_configuration: ""
 
 https_portal_name: https_portal
 https_portal_container_name: "{{ https_portal_name }}"
-https_portal_podman_image: "steveltn/https-portal:latest"
+https_portal_podman_image: "steveltn/https-portal:1.21"
 
 # -------------------------------------
 # MA1SD Variables
 
 ma1sd_name: ma1sd
 ma1sd_container_name: "{{ ma1sd_name }}"
-ma1sd_podman_image: "ma1uta/ma1sd:latest"
+ma1sd_podman_image: "ma1uta/ma1sd:2.5.0"
 ma1sd_configuration: ""
 
 # -------------------------------------
@@ -52,4 +52,4 @@ ma1sd_configuration: ""
 
 ma1sd_extender_name: ma1sd_extender
 ma1sd_extender_container_name: "{{ ma1sd_extender_name }}"
-ma1sd_extender_podman_image: "cameronwickes/ma1sd-extender:latest"
+ma1sd_extender_podman_image: "cameronwickes/ma1sd-extender:1.1.2"
