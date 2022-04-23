@@ -16,7 +16,7 @@
 <br/>
 
 <p>
-  <b>Matrix-Automation creates a functioning Synapse Homeserver by configuring four rootless Podman containers:</b>
+  <b>Matrix-Automation creates a functioning Synapse Homeserver by configuring five rootless Podman containers:</b>
   <ul>
     <li>A PostgreSQL Database - Storing Synapse Data</li>
     <li>A Synapse Homeserver - Federating Rooms</li>
