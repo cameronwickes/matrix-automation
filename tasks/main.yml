@@ -11,6 +11,7 @@
     update_cache: true
     dpkg_options: 'force-overwrite'
     name:
+      - acl
       - apt-transport-https
       - ca-certificates
       - curl
@@ -29,7 +30,7 @@
 
 - name: Add Podman GPG Keys & Repo
   ansible.builtin.shell: ". /etc/os-release && echo \"deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/ /\" | sudo tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list && curl -L \"https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_${VERSION_ID}/Release.key\" | sudo apt-key add -"
-  when: ansible_facts['lsb']['release'] != "21.10"
+  when: ansible_facts['lsb']['release'] is version('21.10', '<=')
   become: true
 
 - name: Update Apt and Install Podman
@@ -60,6 +61,16 @@
     uid: 991
   become: true
 
+- name: Add 'synapse' to SubUID / SubGID
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    line: "991:64946176:65536"
+    state: present
+  with_items:
+    - /etc/subuid
+    - /etc/subgid
+  become: true
+
 - name: Create Synapse Pod
   containers.podman.podman_pod:
     name: synapse_pod
@@ -71,7 +82,8 @@
       - "127.0.0.1:5432:5432"
       - "127.0.0.1:8008:8008"
       - "127.0.0.1:8060:8060"
-
+  become: true
+  become_user: "{{ synapse_name }}"
 # -------------------------------------
 # Pull Required Images
 
@@ -79,26 +91,36 @@
   containers.podman.podman_image:
     name: "{{ postgres_podman_image }}"
     force: true
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Pull Synapse Podman Image
   containers.podman.podman_image:
     name: "{{ synapse_podman_image }}"
     force: true
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Pull HTTPS Portal Image
   containers.podman.podman_image:
     name: "{{ https_portal_podman_image }}"
     force: true
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Pull MA1SD Image
   containers.podman.podman_image:
     name: "{{ ma1sd_podman_image }}"
     force: true
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Pull MA1SD Extender Image
   containers.podman.podman_image:
     name: "{{ ma1sd_extender_podman_image }}"
     force: true
+  become: true
+  become_user: "{{ synapse_name }}"
 
 # -------------------------------------
 # Start PostgreSQL Services & Container
@@ -108,6 +130,8 @@
     name: "{{ postgres_container_name }}-data"
     image: "{{ postgres_podman_image }}"
     state: present
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Create PostgreSQL Container
   containers.podman.podman_container:
@@ -123,15 +147,17 @@
     volumes_from:
       - "{{ postgres_container_name }}-data"
   register: postgres_container_trigger
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Wait Until PostgreSQL Starts Up
   ansible.builtin.wait_for:
     port: 5432
     delay: 5
 
-- name: Create '{{ postgres_user }}' User
+- name: Create '{{ postgres_username }}' User
   ansible.builtin.postgresql_user:
-    name: "{{ postgres_user }}"
+    name: "{{ postgres_username }}"
     password: "{{ postgres_password }}"
     role_attr_flags: CREATEDB,SUPERUSER,LOGIN
     login_host: 127.0.0.1
@@ -140,7 +166,7 @@
 - name: Create '{{ synapse_db_name }}' Database
   ansible.builtin.postgresql_db:
     name: "{{ synapse_db_name }}"
-    owner: "{{ postgres_user }}"
+    owner: "{{ postgres_username }}"
     login_host: 127.0.0.1
     port: 5432
     target: "{{ postgres_schema | default(omit) }}"
@@ -157,9 +183,7 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: 0777
-    owner: "{{ synapse_name }}"
-    group: "{{ synapse_name }}"
+    mode: 0700
   with_items:
     - "/home/synapse"
     - "/home/synapse/data"
@@ -169,11 +193,14 @@
     - "/home/synapse/data/{{ synapse_name }}/media"
     - "/home/synapse/data/{{ synapse_name }}/logs"
   become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Register Synapse Signing Keys
   ansible.builtin.stat:
     path: /home/synapse/data/{{ synapse_name }}/{{ synapse_server_name }}.signing.key
   register: signing_key_trigger
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Generate Synapse Signing Keys
   ansible.builtin.command: "
@@ -189,7 +216,7 @@
 - name: Ensure Synapse Signing Key Permissions
   ansible.builtin.file:
     path: "{{ item }}"
-    mode: 0777
+    mode: 0700
     owner: "{{ synapse_name }}"
     group: "{{ synapse_name }}"
   with_items:
@@ -200,9 +227,11 @@
 - name: Copy Synapse Configuration File
   ansible.builtin.template:
     src: synapse.yaml
-    mode: 0777
+    mode: 0700
     dest: "/home/synapse/data/{{ synapse_name }}/homeserver.yaml"
   register: synapse_config_trigger
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Create Synapse Container
   containers.podman.podman_container:
@@ -211,10 +240,19 @@
     state: started
     restart: "{{ synapse_config_trigger.changed }}"
     pod: synapse_pod
+    user: 991
+    uidmap:
+      - "991:0:1"
+      - "0:1:991"
+    gidmap:
+      - "991:0:1"
+      - "0:1:991"
     env:
       SYNAPSE_CONFIG_DIR: "/data"
     volumes:
       - "/home/synapse/data/{{ synapse_name }}:/data"
+  become: true
+  become_user: "{{ synapse_name }}"
 
 # -------------------------------------
 # Start Identity Server Containers
@@ -222,9 +260,11 @@
 - name: Copy MA1SD Configuration File
   ansible.builtin.template:
     src: ma1sd.yaml
-    mode: 0777
+    mode: 0700
     dest: "/home/synapse/data/{{ ma1sd_name }}/ma1sd.yaml"
   register: ma1sd_config_trigger
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Create MA1SD Container
   containers.podman.podman_container:
@@ -235,6 +275,8 @@
     pod: synapse_pod
     volumes:
       - "/home/synapse/data/{{ ma1sd_name }}:/etc/ma1sd"
+  become: true
+  become_user: "{{ synapse_name }}"
 
 - name: Wait Until Synapse Starts Up
   ansible.builtin.wait_for:
@@ -268,6 +310,9 @@
       MA1SD_EXTENDER_PASSWORD: "{{ ma1sd_extender_password }}"
       MA1SD_EXTENDER_MATRIX_DOMAIN: "{{ synapse_server_name }}"
       MA1SD_EXTENDER_FEDERATED_DOMAINS: "{{ synapse_federation_list }}"
+  become: true
+  become_user: "{{ synapse_name }}"
+
 
 # -------------------------------------
 # Start HTTPS-Portal Container
@@ -305,6 +350,12 @@
         location /_matrix {
           proxy_pass "http://127.0.0.1:8008";
         }
+
+        {{ https_portal_configuration }}
+
+  become: true
+  become_user: "{{ synapse_name }}"
+
 
 # ------------------------------------
 # Add Port Forwarding

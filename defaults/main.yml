@@ -7,7 +7,7 @@
 # Required Variables
 
 # synapse_server_name: domain.tld
-# postgres_user: db_user
+# postgres_username: db_user
 # postgres_password: db_password
 # synapse_federation_list: [domain2.tld]
 # ma1sd_extender_username: ma1sd_user
@@ -28,7 +28,7 @@ synapse_name: synapse
 synapse_container_name: "{{ synapse_name }}"
 synapse_podman_image: "matrixdotorg/synapse:v1.57.1"
 synapse_db_name: "{{ synapse_name }}"
-synapse_db_username: "{{ postgres_user }}"
+synapse_db_username: "{{ postgres_username }}"
 synapse_db_password: "{{ postgres_password }}"
 synapse_configuration: ""
 
@@ -38,6 +38,7 @@ synapse_configuration: ""
 https_portal_name: https_portal
 https_portal_container_name: "{{ https_portal_name }}"
 https_portal_podman_image: "steveltn/https-portal:1.21"
+https_portal_configuration: ""
 
 # -------------------------------------
 # MA1SD Variables
